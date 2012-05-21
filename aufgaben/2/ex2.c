@@ -8,7 +8,8 @@ int main(int argc, char **argv) {
   static int local_rank = -1;
   static long time = 0;
 
-  int i, curr_size;
+  int i, curr_size, curr_byte;
+  double curr_rate;
   int max_elements = 1000 * 100;
   int *foobar = malloc( sizeof(int) * max_elements);
   for (i=0; i<max_elements; i++) {
@@ -31,7 +32,9 @@ int main(int argc, char **argv) {
         MPI_Send(foobar, curr_size, MPI_INT, 1, 0, MPI_COMM_WORLD);
         MPI_Recv(foobar, curr_size, MPI_INT, 1, 0, MPI_COMM_WORLD, &somestatus);
         time = measure_end();
-        printf("%d %ld\n", (curr_size*4)/1000, time);
+        curr_byte = (curr_size*4)/1000;
+        curr_rate = (curr_byte / (double) time); // byte/ns
+        printf("%d %f\n", curr_byte, curr_rate);
       }
     }
     else {
