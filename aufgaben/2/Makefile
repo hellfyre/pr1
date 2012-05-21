@@ -18,6 +18,8 @@ clean:
 
 cleanall: clean
 	rm -f ex1
+	rm -f ex2
+	rm -f ex3
 
 cleanmeasure:
 	rm $(MEASUREDIR)/measure_processtime.o
