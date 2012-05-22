@@ -32,9 +32,9 @@ int main(int argc, char **argv) {
         MPI_Send(foobar, curr_size, MPI_INT, 1, 0, MPI_COMM_WORLD);
         MPI_Recv(foobar, curr_size, MPI_INT, 1, 0, MPI_COMM_WORLD, &somestatus);
         time = measure_end();
-        curr_byte = (curr_size*4)/1000;
-        curr_rate = (curr_byte / (double) time); // byte/ns
-        printf("%d %f\n", curr_byte, curr_rate);
+        curr_byte = (curr_size*4); //byte
+        curr_rate = (curr_byte / (double) time) * 1000; // byte/ns * 1000ns/us == byte/us == Mbyte/s
+        printf("%d %f\n", curr_byte/1000, curr_rate); // print kbyte, Mbyte/s
       }
     }
     else {
