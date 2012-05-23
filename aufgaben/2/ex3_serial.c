@@ -7,28 +7,37 @@
 #define N 1000 * 1000 * 10
 
 int main(int argc, char **argv) {
+  int myRank, commSize;
   long overall_sum = 0;
   static long time = 0;
 
   measure_init();
 
-  int *myVector = malloc( sizeof(int) * N );
-
   MPI_Init(&argc, &argv);
 
-    for (int i=0; i<N; i++) {
-      myVector[i] = rand();
+    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+    MPI_Comm_size(MPI_COMM_WORLD, &commSize);
+
+    int *myVector = malloc( sizeof(int) * N );
+    long *sum = malloc( sizeof(long) * commSize );
+    sum[myRank] = 0;
+
+    if (myRank == 0) {
+      for (int i=0; i<N; i++) {
+        myVector[i] = rand();
+      }
     }
 
     measure_start();
     for (int i=0; i<N; i++) {
-      overall_sum += myVector[i];
+      sum[myRank] += myVector[i];
     }
     time = measure_end();
 
-    printf("time=%ld\n", time);
+    printf("%d: time=%ld\n", myRank, time);
 
   MPI_Finalize();
 
   free(myVector);
+  free(sum);
 }
