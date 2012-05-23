@@ -4,7 +4,7 @@
 
 #include <measure_processtime.h>
 
-#define N 15
+#define N 1000 * 1000 * 10
 
 int main(int argc, char **argv) {
   int myRank, commSize;
