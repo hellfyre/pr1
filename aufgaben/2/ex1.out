@@ -1,0 +1,12 @@
+########################################################################
+# Job 2694775.akb in Schlange parallel
+# angeforderte Ressourcen: neednodes=node016:ppn=2+node015:ppn=2,nodes=2:ppn=2,walltime=00:05:00
+########################################################################
+Hello World! Greetings from process 1.
+Hello World! Greetings from process 0.
+Hello World! Greetings from process 2.
+Hello World! Greetings from process 3.
+########################################################################
+benutzte Ressourcen:
+cput=00:00:00,mem=628kb,vmem=6228kb,walltime=00:00:01
+########################################################################
