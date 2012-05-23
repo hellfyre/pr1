@@ -4,6 +4,12 @@ CC = mpicc
 CFLAGS = -O3 -Wall -std=gnu99 -I$(MEASUREDIR) -g
 LDFLAGS = -lrt
 
+ex3: ex3.o $(MEASUREDIR)/measure_processtime.o
+	$(CC) $(LDFLAGS) $^ -o $@
+
+ex3.o: ex3.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
 ex2: ex2.o $(MEASUREDIR)/measure_processtime.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
