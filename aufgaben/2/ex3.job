@@ -1,0 +1,8 @@
+#!/bin/sh
+#PBS -N pr1_ex3
+#PBS -o ex3.out
+#PBS -e ex3.err
+#PBS -l nodes=2:ppn=2
+#PBS -l walltime=00:05:00
+
+mpiexec -np=4 ./ex3
