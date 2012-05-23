@@ -9,11 +9,8 @@
 int main(int argc, char **argv) {
   int myRank, commSize;
   int nOpt, rangeStart, rangeEnd;
-  long sum = 0;
+  long overall_sum = 0;
   static long time = 0;
-  //MPI_Status somestatus;
-
-  int *myVector = malloc( sizeof(int) * N );
 
   measure_init();
 
@@ -24,6 +21,10 @@ int main(int argc, char **argv) {
     nOpt = N/commSize;
     rangeStart = myRank * nOpt;
     rangeEnd = rangeStart + nOpt;
+
+    int *myVector = malloc( sizeof(int) * N );
+    long *sum = malloc( sizeof(long) * commSize );
+    sum[myRank] = 0;
 
     if (myRank == 0) {
       for (int i=0; i<N; i++) {
@@ -36,17 +37,24 @@ int main(int argc, char **argv) {
 
     MPI_Bcast(myVector, N, MPI_INT, 0, MPI_COMM_WORLD);
 
-    for (int i=0; i<N; i++) {
-      printf("%d: myVector[%d] = %d\n", myRank, i, myVector[i]);
-    }
-    printf("%d: start=%d, end=%d\n", myRank, rangeStart, rangeEnd);
-
+    measure_start();
     for (int i=rangeStart; i<rangeEnd; i++) {
-      sum += myVector[i];
+      sum[myRank] += myVector[i];
     }
-    printf("%d: sum=%ld\n", myRank, sum);
+
+    MPI_Allgather(&sum[myRank], 1, MPI_LONG, sum, 1, MPI_LONG, MPI_COMM_WORLD);
+
+    for (int i=0; i<commSize; i++) {
+      overall_sum += sum[i];
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    time = measure_end();
+
+    printf("%d: time=%ld\n", myRank, time);
 
   MPI_Finalize();
 
   free(myVector);
+  free(sum);
 }
