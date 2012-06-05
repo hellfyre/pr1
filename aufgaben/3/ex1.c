@@ -11,9 +11,12 @@
 int main(int argc, char **argv) {
   int myRank, commSize;
   int nOpt, rangeStart, rangeEnd;
-  double *v1, *v2, *subproduct;
+  double *v1, *v2;
+  double subproduct = 0;
   double scalar = 0;
+  double receiveBuff;
   static unsigned long time = 0;
+  MPI_Status status;
 
   struct timeval time_seed;
   gettimeofday(&time_seed, NULL);
@@ -34,8 +37,6 @@ int main(int argc, char **argv) {
 
     v1 = malloc(sizeof(double) * N);
     v2 = malloc(sizeof(double) * N);
-    subproduct = malloc(sizeof(double) * commSize);
-    subproduct[myRank] = 0;
     if (myRank == 0) {
       for (int i=0; i<N; i++) {
         v1[i] = rand();
@@ -51,25 +52,38 @@ int main(int argc, char **argv) {
       MPI_Bcast(v2, N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
       for (int i=rangeStart; i<rangeEnd; i++) {
-        subproduct[myRank] += v1[i] * v2[i]; // 2*(rangeEnd-rangeStart) Flops
+        subproduct += v1[i] * v2[i]; // 2*(rangeEnd-rangeStart) Flops
       }
 
-      MPI_Allgather(&subproduct[myRank], 1, MPI_DOUBLE, subproduct, 1, MPI_DOUBLE, MPI_COMM_WORLD);
-
-      for (int i=0; i<commSize; i++) {
-        scalar += subproduct[i]; // commSize Flops
+      for (int i=2; i<=commSize; i*=2) {
+        if (myRank % i == 0) {
+          if ( (myRank+i/2) < commSize ) {
+            MPI_Recv(&receiveBuff, 1, MPI_DOUBLE, myRank+(i/2), 0, MPI_COMM_WORLD, &status);
+            subproduct += receiveBuff; // 1 Flop per loop
+          }
+        }
+        else {
+          MPI_Send(&subproduct, 1, MPI_DOUBLE, myRank-(i/2), 0, MPI_COMM_WORLD);
+          break;
+        }
       }
+
+      MPI_Bcast(&subproduct, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
     MPI_Barrier(MPI_COMM_WORLD);
     time = measure_end();
 
+    int loopFlops = 0;
+    for (int i=2; i<=commSize; i*=2) {
+      if (myRank % i == 0) loopFlops++;
+    }
     double time_double = (double) time;
-    double gflops = ( (2*(rangeEnd-rangeStart)) + (commSize) ) / time_double;
+    double gflops = ( (2*(rangeEnd-rangeStart)) + (loopFlops) ) / time_double;
 
     printf("%d %ld %f %f\n", myRank, time, gflops, scalar);
 
     free(v1);
     free(v2);
-    free(subproduct);
 
   MPI_Finalize();
 
