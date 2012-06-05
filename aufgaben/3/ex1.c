@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
     double time_double = (double) time;
     double gflops = ( (2*(rangeEnd-rangeStart)) + (loopFlops) ) / time_double;
 
-    printf("%d %ld %f %f\n", myRank, time, gflops, subproduct);
+    printf("%d %lu %f %f\n", myRank, time, gflops, subproduct);
 
     free(v1);
     free(v2);
