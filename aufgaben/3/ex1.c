@@ -1,21 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
+#include <math.h>
 
 #include <sys/time.h>
 
 #include <gettime.c>
 
-#define N 1000 * 1000 * 10
-
 int main(int argc, char **argv) {
   int myRank, commSize, commSizeOpt = -1;
-  int nOpt, rangeStart, rangeEnd;
+  int N, nOpt, rangeStart, rangeEnd;
   double *v1, *v2;
   double subproduct = 0;
   double receiveBuff;
   static double time = 0.0;
   MPI_Status status;
+
+  N = pow(10, atoi(argv[1]));
 
   struct timeval time_seed;
   gettimeofday(&time_seed, NULL);
