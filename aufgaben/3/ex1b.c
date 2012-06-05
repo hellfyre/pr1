@@ -17,7 +17,6 @@ int main(int argc, char **argv) {
   struct timeval time_seed;
   gettimeofday(&time_seed, NULL);
   srand(time_seed.tv_sec);
-  measure_init();
 
   N = pow(10, atoi(argv[1]));
 
@@ -66,7 +65,7 @@ int main(int argc, char **argv) {
 
     double gflops = ( (2*(rangeEnd-rangeStart)) + (commSize) ) / (time * 1000000000);
 
-    printf("%d %ld %f %f\n", myRank, time, gflops, scalar);
+    printf("%d %f %f %f\n", myRank, time, gflops, scalar);
 
     free(v1);
     free(v2);

@@ -1,7 +1,7 @@
 #!/bin/sh
 #PBS -N pr1_s3_ex1b_10p7
-#PBS -o ex1c_10p7.out
-#PBS -e ex1c_10p7.err
+#PBS -o ex1b_10p7.out
+#PBS -e ex1b_10p7.err
 #PBS -l nodes=4:ppn=8
 #PBS -l walltime=00:05:00
 
