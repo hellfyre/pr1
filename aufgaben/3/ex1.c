@@ -9,11 +9,10 @@
 #define N 1000 * 1000 * 10
 
 int main(int argc, char **argv) {
-  int myRank, commSize;
+  int myRank, commSize, commSizeOpt = -1;
   int nOpt, rangeStart, rangeEnd;
   double *v1, *v2;
   double subproduct = 0;
-  double scalar = 0;
   double receiveBuff;
   static unsigned long time = 0;
   MPI_Status status;
@@ -35,6 +34,10 @@ int main(int argc, char **argv) {
       rangeEnd = N;
     }
 
+    for (int i=1; i<commSize; i*=2) {
+      if (commSize <= i*2) commSizeOpt = i*2;
+    }
+
     v1 = malloc(sizeof(double) * N);
     v2 = malloc(sizeof(double) * N);
     if (myRank == 0) {
@@ -47,6 +50,7 @@ int main(int argc, char **argv) {
       printf("rank  time  gflops  scalar\n\n");
     }
 
+    MPI_Barrier(MPI_COMM_WORLD);
     measure_start();
       MPI_Bcast(v1, N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
       MPI_Bcast(v2, N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -55,7 +59,7 @@ int main(int argc, char **argv) {
         subproduct += v1[i] * v2[i]; // 2*(rangeEnd-rangeStart) Flops
       }
 
-      for (int i=2; i<=commSize; i*=2) {
+      for (int i=2; i<=commSizeOpt; i*=2) {
         if (myRank % i == 0) {
           if ( (myRank+i/2) < commSize ) {
             MPI_Recv(&receiveBuff, 1, MPI_DOUBLE, myRank+(i/2), 0, MPI_COMM_WORLD, &status);
@@ -80,7 +84,7 @@ int main(int argc, char **argv) {
     double time_double = (double) time;
     double gflops = ( (2*(rangeEnd-rangeStart)) + (loopFlops) ) / time_double;
 
-    printf("%d %ld %f %f\n", myRank, time, gflops, scalar);
+    printf("%d %ld %f %f\n", myRank, time, gflops, subproduct);
 
     free(v1);
     free(v2);
