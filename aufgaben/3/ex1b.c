@@ -1,24 +1,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
+#include <math.h>
 
 #include <sys/time.h>
 
-#include <measure_processtime.h>
-
-#define N 1000 * 1000 * 10
+#include <gettime.c>
 
 int main(int argc, char **argv) {
   int myRank, commSize;
-  int nOpt, rangeStart, rangeEnd;
+  int N, nOpt, rangeStart, rangeEnd;
   double *v1, *v2, *subproduct;
   double scalar = 0;
-  static unsigned long time = 0;
+  static double time = 0.0;
 
   struct timeval time_seed;
   gettimeofday(&time_seed, NULL);
   srand(time_seed.tv_sec);
   measure_init();
+
+  N = pow(10, atoi(argv[1]));
 
   MPI_Init(&argc, &argv);
 
@@ -46,7 +47,8 @@ int main(int argc, char **argv) {
       printf("rank  time  gflops  scalar\n\n");
     }
 
-    measure_start();
+    MPI_Barrier(MPI_COMM_WORLD);
+    resetTime();
       MPI_Bcast(v1, N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
       MPI_Bcast(v2, N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
@@ -60,10 +62,9 @@ int main(int argc, char **argv) {
         scalar += subproduct[i]; // commSize Flops
       }
     MPI_Barrier(MPI_COMM_WORLD);
-    time = measure_end();
+    time = getTime();
 
-    double time_double = (double) time;
-    double gflops = ( (2*(rangeEnd-rangeStart)) + (commSize) ) / time_double;
+    double gflops = ( (2*(rangeEnd-rangeStart)) + (commSize) ) / (time * 1000000000);
 
     printf("%d %ld %f %f\n", myRank, time, gflops, scalar);
 
