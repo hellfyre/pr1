@@ -4,19 +4,18 @@
 
 #include <sys/time.h>
 
-#include <measure_processtime.h>
+#include <gettime.c>
 
 int main(int argc, char **argv) {
   int local_rank = -1;
   double *v1, *v2;
   double scalar = 0;
   unsigned int n = 1000, n_max = 10000000;
-  static unsigned long time = 0;
+  double time = 0;
 
   struct timeval time_seed;
   gettimeofday(&time_seed, NULL);
   srand(time_seed.tv_sec);
-  measure_init();
 
   MPI_Init(&argc, &argv);
 
@@ -32,14 +31,13 @@ int main(int argc, char **argv) {
         v2[i] = rand();
       }
 
-      measure_start();
+      resetTime();
       for (int i=0; i<n; i++) {
         scalar += v1[i] * v2[i]; // 2*n Flops
       }
-      time = measure_end();
-      double time_double = (double) time;
+      time = getTime();
 
-      printf("%d %f %ld %f\n", n, scalar, time, ((2*n)/time_double));
+      printf("%d %f %f %f\n", n, scalar, time, ((2*n)/(time * 1000000000)));
       free(v1);
       free(v2);
     }

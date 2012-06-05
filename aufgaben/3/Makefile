@@ -4,17 +4,31 @@ CC = mpicc
 CFLAGS = -O3 -Wall -std=gnu99 -I$(MEASUREDIR) -g
 LDFLAGS = -lrt -lm
 
-ex1: ex1.o
+ex1c: ex1c.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
-ex1.o: ex1.c
+ex1c.o: ex1c.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+ex1b: ex1b.o
+	$(CC) $(LDFLAGS) $^ -o $@
+
+ex1b.o: ex1b.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+ex1a: ex1a.o
+	$(CC) $(LDFLAGS) $^ -o $@
+
+ex1a.o: ex1a.c
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
 	rm -f *.o
 
 cleanall: clean
-	rm -f ex1
+	rm -f ex1c
+	rm -f ex1b
+	rm -f ex1a
 
 cleanmeasure:
 	rm $(MEASUREDIR)/measure_processtime.o
