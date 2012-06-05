@@ -1,0 +1,8 @@
+#!/bin/sh
+#PBS -N pr1_s3_ex1a
+#PBS -o ex1a.out
+#PBS -e ex1a.err
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=00:05:00
+
+mpiexec -np=1 ./ex1a
