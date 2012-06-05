@@ -1,0 +1,23 @@
+#!/bin/sh
+#PBS -N pr1_s3_ex1b_10p3
+#PBS -o ex1c_10p3.out
+#PBS -e ex1c_10p3.err
+#PBS -l nodes=4:ppn=8
+#PBS -l walltime=00:05:00
+
+mpiexec -np=2 ./ex1b 3
+mpiexec -np=4 ./ex1b 3
+mpiexec -np=6 ./ex1b 3
+mpiexec -np=8 ./ex1b 3
+mpiexec -np=10 ./ex1b 3
+mpiexec -np=12 ./ex1b 3
+mpiexec -np=14 ./ex1b 3
+mpiexec -np=16 ./ex1b 3
+mpiexec -np=18 ./ex1b 3
+mpiexec -np=20 ./ex1b 3
+mpiexec -np=22 ./ex1b 3
+mpiexec -np=24 ./ex1b 3
+mpiexec -np=26 ./ex1b 3
+mpiexec -np=28 ./ex1b 3
+mpiexec -np=30 ./ex1b 3
+mpiexec -np=32 ./ex1b 3
