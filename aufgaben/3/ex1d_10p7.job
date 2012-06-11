@@ -1,0 +1,12 @@
+#!/bin/sh
+#PBS -N pr1_s3_ex1d_10p7
+#PBS -o ex1d_10p7.out
+#PBS -e ex1d_10p7.err
+#PBS -l nodes=4:ppn=8
+#PBS -l walltime=00:05:00
+
+mpiexec -np=2 ./ex1d 7
+mpiexec -np=4 ./ex1d 7
+mpiexec -np=8 ./ex1d 7
+mpiexec -np=16 ./ex1d 7
+mpiexec -np=32 ./ex1d 7
