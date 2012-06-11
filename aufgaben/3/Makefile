@@ -4,6 +4,12 @@ CC = mpicc
 CFLAGS = -O3 -Wall -std=gnu99 -I$(MEASUREDIR) -g
 LDFLAGS = -lrt -lm
 
+ex1d: ex1d.o
+	$(CC) $(LDFLAGS) $^ -o $@
+
+ex1d.o: ex1d.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
 ex1c: ex1c.o
 	$(CC) $(LDFLAGS) $^ -o $@
 

@@ -8,15 +8,17 @@
 #include <gettime.c>
 
 int main(int argc, char **argv) {
-  int myRank, commSize, commSizeOpt = -1;
-  int N, nOpt, rangeStart, rangeEnd;
+  int myRank, commSize;
+  int n, nOpt, rest;
+  int *sendcnts, *displacement;
   double *v1, *v2;
   double subproduct = 0;
-  double receiveBuff;
+  double recvBuff;
+  double *v1_recv, *v2_recv;
   static double time = 0.0;
   MPI_Status status;
 
-  N = pow(10, atoi(argv[1]));
+  n = pow(10, atoi(argv[1]));
 
   struct timeval time_seed;
   gettimeofday(&time_seed, NULL);
@@ -26,67 +28,83 @@ int main(int argc, char **argv) {
 
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     MPI_Comm_size(MPI_COMM_WORLD, &commSize);
-    nOpt = N/commSize;
-    rangeStart = myRank * nOpt;
-    rangeEnd = rangeStart + nOpt;
+    nOpt = n/commSize;
+    rest = n - nOpt * commSize;
 
-    if (myRank == (commSize-1)) {
-      rangeEnd = N;
+    sendcnts = malloc(sizeof(int)*commSize);
+    displacement = malloc(sizeof(int)*commSize);
+
+    displacement[0] = 0;
+    for (int i=0; i<commSize; i++) {
+      sendcnts[i] = nOpt;
+      if (i>0) displacement[i] = displacement[i-1] + sendcnts[i-1]; // * sizeof(double);
+      if (rest>0) {
+        sendcnts[i]++;
+        rest--;
+      }
     }
 
-    for (int i=1; i<commSize; i*=2) {
-      if (commSize <= i*2) commSizeOpt = i*2;
-    }
-
-    v1 = malloc(sizeof(double) * N);
-    v2 = malloc(sizeof(double) * N);
+    v1_recv = malloc(sizeof(double) * sendcnts[myRank]);
+    v2_recv = malloc(sizeof(double) * sendcnts[myRank]);
     if (myRank == 0) {
-      for (int i=0; i<N; i++) {
+      v1 = malloc(sizeof(double) * n);
+      v2 = malloc(sizeof(double) * n);
+      for (int i=0; i<n; i++) {
         v1[i] = rand();
         v2[i] = rand();
       }
       printf("\n\n");
-      printf("job: n=%d p=%d\n", N, commSize);
+      printf("job: n=%d p=%d\n", n, commSize);
       printf("rank  time  gflops  scalar\n\n");
     }
+    else v1 = v2 = NULL;
 
     MPI_Barrier(MPI_COMM_WORLD);
     resetTime();
-      MPI_Bcast(v1, N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-      MPI_Bcast(v2, N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+      MPI_Scatterv(v1, sendcnts, displacement, MPI_DOUBLE, v1_recv, sendcnts[myRank], MPI_DOUBLE, 0, MPI_COMM_WORLD);
+      MPI_Scatterv(v2, sendcnts, displacement, MPI_DOUBLE, v2_recv, sendcnts[myRank], MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-      for (int i=rangeStart; i<rangeEnd; i++) {
-        subproduct += v1[i] * v2[i]; // 2*(rangeEnd-rangeStart) Flops
+      for (int i=0; i<sendcnts[myRank]; i++) {
+        subproduct += v1_recv[i] * v2_recv[i]; // 2*sendcnts[myRank] Flops
       }
 
-      for (int i=2; i<=commSizeOpt; i*=2) {
-        if (myRank % i == 0) {
-          if ( (myRank+i/2) < commSize ) {
-            MPI_Recv(&receiveBuff, 1, MPI_DOUBLE, myRank+(i/2), 0, MPI_COMM_WORLD, &status);
-            subproduct += receiveBuff; // 1 Flop per loop
+      for (int i=2; i<=commSize; i*=2) {
+        for (int j=commSize/i; j>0; j--) {
+          int offset = commSize - i*j;
+          for (int k=0; k<i/2; k++) {
+            int proc1 = offset + k;
+            int proc2 = proc1 + i/2;
+            if (myRank == proc1) {
+              MPI_Send(&subproduct, 1, MPI_DOUBLE, proc2, 0, MPI_COMM_WORLD);
+              MPI_Recv(&recvBuff, 1, MPI_DOUBLE, proc2, 0, MPI_COMM_WORLD, &status);
+              subproduct += recvBuff;
+            }
+            if (myRank == proc2) {
+              MPI_Recv(&recvBuff, 1, MPI_DOUBLE, proc1, 0, MPI_COMM_WORLD, &status);
+              MPI_Send(&subproduct, 1, MPI_DOUBLE, proc1, 0, MPI_COMM_WORLD);
+              subproduct += recvBuff;
+            }
           }
         }
-        else {
-          MPI_Send(&subproduct, 1, MPI_DOUBLE, myRank-(i/2), 0, MPI_COMM_WORLD);
-          break;
-        }
       }
-
-      MPI_Bcast(&subproduct, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     MPI_Barrier(MPI_COMM_WORLD);
     time = getTime();
 
     int loopFlops = 0;
     for (int i=2; i<=commSize; i*=2) {
-      if (myRank % i == 0) loopFlops++;
+      loopFlops++;
     }
-    double gflops = ( (2*(rangeEnd-rangeStart)) + (loopFlops) ) / ( time * 1000000000 );
+    double gflops = ( (2*sendcnts[myRank]) + (loopFlops) ) / ( time * 1000000000 );
 
     printf("%d %f %f %f\n", myRank, time, gflops, subproduct);
 
     free(v1);
     free(v2);
+    free(v1_recv);
+    free(v2_recv);
+    free(sendcnts);
+    free(displacement);
 
   MPI_Finalize();
 
