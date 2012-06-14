@@ -1,0 +1,3 @@
+This directory is delivered intentionally empty.
+Compiled library files will be placed here.
+You can manually build them using: make libs
