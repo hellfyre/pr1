@@ -8,6 +8,39 @@
 #define N               1024    // Number of discrete points in X-direction
 #define MAX_ITERATIONS  10000   // Max. number of iterations to compute
 
+#define ASSEMBLE  if (myRank == 0) { \
+                    for (int rank=1; rank<commSize; rank++) { \
+                      MPI_Recv(areas[rank].v, areas[rank].size, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD, NULL); \
+                    } \
+                  } \
+                  else { \
+                    MPI_Send(areas[myRank].v, areas[mRank].size, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD): \
+                  } \
+                  int rank = 0; \
+                  int rank_per_row = 0; \
+                  int elementcnt = 0; \
+                  int rowcount = 0; \
+                  int proc_row = 0; \
+                  for (int i=0; i<N*M; i++) { \
+                    s[i] = areas[rank].v[elementcnt + rowcount*areas[rank].x_size]; \
+                    elementcnt++; \
+                    if (elementcnt == areas[rank].x_size) { \
+                      rank_per_row++; \
+                      rank = rank_per_row + areas[0].proc_size_x * proc_row; \
+                      if (rank_per_row == areas[0].proc_size_x) { \
+                        rowcount++; \
+                        rank_per_row = 0; \
+                        rank = rank_per_row + areas[0].proc_size_x * proc_row; \
+                        if (rowcount == areas[rank].y_size) { \
+                          rowcount = 0; \
+                          proc_row++; \
+                          rank = rank_per_row + areas[0].proc_size_x * proc_row; \
+                        } \
+                      } \
+                      elementcnt = 0; \
+                    } \
+                  } \
+
 /* ### External Interfaces ### */
 
 extern int saveBMP(const char* pathToFile, unsigned char *pixeldata, 
@@ -23,15 +56,16 @@ extern double getTime();
 
 struct area {
   double *v;
-  int x;
-  int y;
+  int size;
+  int pos_x;
+  int pos_y;
   int x_size;
   int y_size;
-  int n;
-  int m;
+  int proc_size_x;
+  int proc_size_y;
 };
 
-void divide(double *v, struct area *a, int myRank, int P, int n, int m) {
+void divide(double *v, struct area **a, int P, int n, int m) {
   int old = 1;
   int x, y;
   // sinnvolle Aufteilung auf P Prozessoren finden
@@ -71,16 +105,8 @@ void divide(double *v, struct area *a, int myRank, int P, int n, int m) {
     }
   }
 
-  // Informationen zum eigenen Gebiet sammeln
-  a->x = myRank % x;
-  a->y = myRank / x;
-  a->x_size = x_sizes[a->x];
-  a->y_size = y_sizes[a->y];
-  a->n = x;
-  a->m = y;
-
   // Gebiete erzeugen
-  int *areas[x*y];
+  double *areas[x*y];
   int areacounter = 0;
   int y_offset = 0;
 
@@ -91,8 +117,9 @@ void divide(double *v, struct area *a, int myRank, int P, int n, int m) {
       int row_upper_bound = y_sizes[y_koord];
       int column_upper_bound = x_sizes[x_koord];
       int areasize = row_upper_bound * column_upper_bound;
-      areas[areacounter] = malloc(areasize*sizeof(double));
-      int *current_area = areas[areacounter];
+      a[areacounter]->size = areasize;
+      areas[areacounter] = (double*) malloc(areasize*sizeof(double));
+      double *current_area = areas[areacounter];
       int area_element_counter = 0;
       int area_offset = x_offset;
 
@@ -109,13 +136,24 @@ void divide(double *v, struct area *a, int myRank, int P, int n, int m) {
     y_offset += n * y_sizes[y_koord];
   }
 
-  a->v = areas[myRank];
+  // Informationen zum eigenen Gebiet sammeln
+  for (int rank=0; rank<P; rank++) {
+    a[rank]->pos_x = rank % x;
+    a[rank]->pos_y = rank / x;
+    a[rank]->x_size = x_sizes[a[rank]->pos_x];
+    a[rank]->y_size = y_sizes[a[rank]->pos_y];
+    a[rank]->proc_size_x = x;
+    a[rank]->proc_size_y = y;
+    a[rank]->v = areas[rank];
+  }
 
 }
 
 void solve(double *x, const double *s,
 		unsigned int m, unsigned int n,
-		unsigned int iterations)
+		unsigned int iterationsi,
+    int pos_x, int pos_y, int proc_size_x,
+    int myRank)
 {
     int i, j, it;
     double *x_new = (double*)malloc(sizeof(double)*m*n);
@@ -130,7 +168,7 @@ void solve(double *x, const double *s,
         memset(ghost_left, 0, m*sizeof(double));
         memset(ghost_right, 0, m*sizeof(double));
 
-        if ( a->x > 0 ) {
+        if ( pos_x > 0 ) {
           double left[m];
           int offset = 0;
           for (int i=0; i<m; i++) {
@@ -139,34 +177,34 @@ void solve(double *x, const double *s,
           }
           MPI_Sendrecv(left, m, MPI_DOUBLE, myRank - 1, 0, ghost_left, m, MPI_DOUBLE, myRank - 1, 0, MPI_COMM_WORLD, NULL);
         }
-        else if ( a->x < (a->n-1) ) {
-          double right[a->y_size];
-          int offset = a->x_size-1;
-          for (int i=0; i<a->y_size; i++) {
+        else if ( pos_x < (n-1) ) {
+          double right[m];
+          int offset = n-1;
+          for (int i=0; i<m; i++) {
             right[i] = s[offset];
-            offset += a->x_size;
+            offset += n;
           }
           MPI_Sendrecv(right, m, MPI_DOUBLE, myRank + 1, 0, ghost_right, m, MPI_DOUBLE, myRank + 1, 0, MPI_COMM_WORLD, NULL);
         }
-        if ( a->y > 0 ) {
-          double top[a->x_size];
-          for (int i=0; i<a->x_size; i++) {
-            top[i] = s[i];
+        if ( pos_y > 0 ) {
+          double bottom[n];
+          for (int i=0; i<n; i++) {
+            bottom[i] = s[i];
           }
-          MPI_Sendrecv(top, n, MPI_DOUBLE, myRank - n, 0, ghost_top, n, MPI_DOUBLE, myRank - n, 0, MPI_COMM_WORLD, NULL);
+          MPI_Sendrecv(bottom, n, MPI_DOUBLE, myRank - proc_size_x, 0, ghost_bottom, n, MPI_DOUBLE, myRank - proc_size_x, 0, MPI_COMM_WORLD, NULL);
         }
-        else if ( a->y < (a->m-1) ) {
-          double bottom[a->x_size];
-          int offset = a->x_size * (a->y_size - 1);
-          for (int i=0; i<a->x_size; i++) {
-            bottom[i] = s[offset + i];
+        else if ( pos_y < (m-1) ) {
+          double top[n];
+          int offset = n * (m - 1);
+          for (int i=0; i<n; i++) {
+            top[i] = s[offset + i];
           }
-          MPI_Sendrecv(bottom, n, MPI_DOUBLE, myRank + n, 0, ghost_bottom, n, MPI_DOUBLE, myRank + n, 0, MPI_COMM_WORLD, NULL);
+          MPI_Sendrecv(top, n, MPI_DOUBLE, myRank + proc_size_x, 0, ghost_top, n, MPI_DOUBLE, myRank + proc_size_x, 0, MPI_COMM_WORLD, NULL);
         }
 
-        for (i = 0; i < m; i++)
+        for (i = 0; i < m; i++) // y: rows
         {
-            for (j = 0; j < n; j++)
+            for (j = 0; j < n; j++) // x: columns
             {
                 double x_top   = (i < m-1 ? x[(i+1)*n+j] : ghost_top[j]);
                 double x_down  = (i > 0   ? x[(i-1)*n+j] : ghost_bottom[j]);
@@ -184,10 +222,8 @@ int main(int argc, char **argv)
 {
     // Set up problem
     printf("Setting up problem...");
-    //double *x = (double*)malloc(sizeof(double)*(M*N));
     double *s = (double*)malloc(sizeof(double)*(M*N));
     
-    //memset(x, (char)0, sizeof(double)*M*N);
     memset(s, (char)0, sizeof(double)*M*N);
     
     int myRank, commSize;
@@ -205,18 +241,19 @@ int main(int argc, char **argv)
       printf("Solving...\n");
       resetTime();
 
-      struct area a;
-      divide(s, &a, commSize, N, M);
-      double *result_area = (double*) malloc(a.x_size*a.y_size*sizeof(double));
+      struct area areas[commSize];
+      divide(s, &areas, commSize, N, M);
+      double *result_area = (double*) malloc(areas[myRank].x_size*areas[myRank].y_size*sizeof(double));
 
       unsigned int iteration;
       for (iteration = 0; iteration < MAX_ITERATIONS; )
       {
           // solve
-          //solve(x, s, M, N, 100);
-          solve(result_area, a.v, a.y_size, a.x_size, 100);
+          solve(result_area, areas[myRank].v, areas[myRank].y_size, areas[myRank].x_size, 100);
           iteration += 100;
           printf("iterations: %d\n", iteration);
+
+          ASSEMBLE
 
           // visualize
           unsigned char *pixels;
