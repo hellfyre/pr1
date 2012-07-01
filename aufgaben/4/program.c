@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <mpi.h>
+
 /* ### Problem Specifications ### */
 
 #define M               1024    // Number of discrete points in Y-direction
@@ -65,7 +67,7 @@ struct area {
   int proc_size_y;
 };
 
-void divide(double *v, struct area **a, int P, int n, int m) {
+void divide(double *v, struct area a[], int P, int n, int m) {
   int old = 1;
   int x, y;
   // sinnvolle Aufteilung auf P Prozessoren finden
@@ -151,7 +153,7 @@ void divide(double *v, struct area **a, int P, int n, int m) {
 
 void solve(double *x, const double *s,
 		unsigned int m, unsigned int n,
-		unsigned int iterationsi,
+		unsigned int iterations,
     int pos_x, int pos_y, int proc_size_x,
     int myRank)
 {
