@@ -1,0 +1,9 @@
+Serial:
+Time needed for solving: 269.712251s
+########################################################################
+Parallel:
+2  Time needed for solving: 89.644519s  Speedup: 3.009
+4  Time needed for solving: 83.871370s  Speedup: 3.216
+8  Time needed for solving: 85.438224s  Speedup: 3.157
+16 Time needed for solving: 15.285899s  Speedup: 17.644
+32 Time needed for solving: 32.910637s  Speedup: 8.195
