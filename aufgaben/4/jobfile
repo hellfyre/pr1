@@ -1,0 +1,12 @@
+#!/bin/sh
+#PBS -N pr1_s4_ex2
+#PBS -o ex2.out
+#PBS -e ex2.err
+#PBS -l nodes=4:ppn=8
+#PBS -l walltime=00:15:00
+
+mpiexec -np=2 ./executable
+mpiexec -np=4 ./executable
+mpiexec -np=8 ./executable
+mpiexec -np=16 ./executable
+mpiexec -np=32 ./executable
