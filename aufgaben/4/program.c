@@ -10,13 +10,22 @@
 #define N               1024    // Number of discrete points in X-direction
 #define MAX_ITERATIONS  10000   // Max. number of iterations to compute
 
-#define ASSEMBLE  if (myRank == 0) { \
-                    for (int rank=1; rank<commSize; rank++) { \
-                      MPI_Recv(areas[rank].v, areas[rank].size, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD, NULL); \
-                    } \
+#define ASSEMBLE  double *buffer = malloc(N*M*sizeof(double)); \
+                  int *recvcounts = malloc(commSize * sizeof(int)); \
+                  int *displs = malloc(commSize * sizeof(int)); \
+                  int offset = 0; \
+                  for (int rank=0; rank<commSize; rank++) { \
+                    displs[rank] = offset; \
+                    recvcounts[rank] = areas[rank].size; \
+                    offset += areas[rank].size; \
                   } \
-                  else { \
-                    MPI_Send(areas[myRank].v, areas[mRank].size, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD): \
+                  MPI_Gatherv(areas[myRank].v, areas[myRank].size, MPI_DOUBLE, buffer, recvcounts, displs, MPI_DOUBLE, 0, MPI_COMM_WORLD); \
+                  if (myRank == 0) { \
+                    int offset = 0; \
+                    for (int rank=1; rank<commSize; rank++) { \
+                      memcpy(areas[rank].v, &buffer[offset], sizeof(double)*areas[rank].size); \
+                      offset += areas[rank].size; \
+                    } \
                   } \
                   int rank = 0; \
                   int rank_per_row = 0; \
@@ -42,6 +51,7 @@
                       elementcnt = 0; \
                     } \
                   } \
+                  free(buffer);
 
 /* ### External Interfaces ### */
 
@@ -70,6 +80,7 @@ struct area {
 void divide(double *v, struct area a[], int P, int n, int m) {
   int old = 1;
   int x, y;
+  x = y = 0;
   // sinnvolle Aufteilung auf P Prozessoren finden
   for (int i=1; i<=P; i++) {
     if (P%i == 0) {
@@ -119,7 +130,7 @@ void divide(double *v, struct area a[], int P, int n, int m) {
       int row_upper_bound = y_sizes[y_koord];
       int column_upper_bound = x_sizes[x_koord];
       int areasize = row_upper_bound * column_upper_bound;
-      a[areacounter]->size = areasize;
+      a[areacounter].size = areasize;
       areas[areacounter] = (double*) malloc(areasize*sizeof(double));
       double *current_area = areas[areacounter];
       int area_element_counter = 0;
@@ -140,13 +151,13 @@ void divide(double *v, struct area a[], int P, int n, int m) {
 
   // Informationen zum eigenen Gebiet sammeln
   for (int rank=0; rank<P; rank++) {
-    a[rank]->pos_x = rank % x;
-    a[rank]->pos_y = rank / x;
-    a[rank]->x_size = x_sizes[a[rank]->pos_x];
-    a[rank]->y_size = y_sizes[a[rank]->pos_y];
-    a[rank]->proc_size_x = x;
-    a[rank]->proc_size_y = y;
-    a[rank]->v = areas[rank];
+    a[rank].pos_x = rank % x;
+    a[rank].pos_y = rank / x;
+    a[rank].x_size = x_sizes[a[rank].pos_x];
+    a[rank].y_size = y_sizes[a[rank].pos_y];
+    a[rank].proc_size_x = x;
+    a[rank].proc_size_y = y;
+    a[rank].v = areas[rank];
   }
 
 }
@@ -154,10 +165,12 @@ void divide(double *v, struct area a[], int P, int n, int m) {
 void solve(double *x, const double *s,
 		unsigned int m, unsigned int n,
 		unsigned int iterations,
-    int pos_x, int pos_y, int proc_size_x,
+    int pos_x, int pos_y,
+    int proc_size_x, int proc_size_y,
     int myRank)
 {
     int i, j, it;
+    MPI_Status status;
     double *x_new = (double*)malloc(sizeof(double)*m*n);
     for (it = 0; it < iterations; it++)
     {
@@ -177,31 +190,32 @@ void solve(double *x, const double *s,
             left[i] = s[offset];
             offset += n;
           }
-          MPI_Sendrecv(left, m, MPI_DOUBLE, myRank - 1, 0, ghost_left, m, MPI_DOUBLE, myRank - 1, 0, MPI_COMM_WORLD, NULL);
+          MPI_Sendrecv(left, m, MPI_DOUBLE, myRank - 1, it, ghost_left, m, MPI_DOUBLE, myRank - 1, it, MPI_COMM_WORLD, &status);
         }
-        else if ( pos_x < (n-1) ) {
+        if ( pos_x < (proc_size_x-1) ) {
           double right[m];
           int offset = n-1;
           for (int i=0; i<m; i++) {
             right[i] = s[offset];
             offset += n;
           }
-          MPI_Sendrecv(right, m, MPI_DOUBLE, myRank + 1, 0, ghost_right, m, MPI_DOUBLE, myRank + 1, 0, MPI_COMM_WORLD, NULL);
+          MPI_Sendrecv(right, m, MPI_DOUBLE, myRank + 1, it, ghost_right, m, MPI_DOUBLE, myRank + 1, it, MPI_COMM_WORLD, &status);
         }
+
         if ( pos_y > 0 ) {
           double bottom[n];
           for (int i=0; i<n; i++) {
             bottom[i] = s[i];
           }
-          MPI_Sendrecv(bottom, n, MPI_DOUBLE, myRank - proc_size_x, 0, ghost_bottom, n, MPI_DOUBLE, myRank - proc_size_x, 0, MPI_COMM_WORLD, NULL);
+          MPI_Sendrecv(bottom, n, MPI_DOUBLE, myRank - proc_size_x, it, ghost_bottom, n, MPI_DOUBLE, myRank - proc_size_x, it, MPI_COMM_WORLD, &status);
         }
-        else if ( pos_y < (m-1) ) {
+        if ( pos_y < (proc_size_y-1) ) {
           double top[n];
           int offset = n * (m - 1);
           for (int i=0; i<n; i++) {
             top[i] = s[offset + i];
           }
-          MPI_Sendrecv(top, n, MPI_DOUBLE, myRank + proc_size_x, 0, ghost_top, n, MPI_DOUBLE, myRank + proc_size_x, 0, MPI_COMM_WORLD, NULL);
+          MPI_Sendrecv(top, n, MPI_DOUBLE, myRank + proc_size_x, it, ghost_top, n, MPI_DOUBLE, myRank + proc_size_x, it, MPI_COMM_WORLD, &status);
         }
 
         for (i = 0; i < m; i++) // y: rows
@@ -215,6 +229,7 @@ void solve(double *x, const double *s,
                 x_new[i*n+j] = (s[i*n+j]+x_top+x_down+x_left+x_right)/4;
             }
         }
+
         memcpy(x, x_new, m*n*sizeof(double));
     }
     free(x_new);
@@ -223,7 +238,7 @@ void solve(double *x, const double *s,
 int main(int argc, char **argv)
 {
     // Set up problem
-    printf("Setting up problem...");
+    //printf("Setting up problem...");
     double *s = (double*)malloc(sizeof(double)*(M*N));
     
     memset(s, (char)0, sizeof(double)*M*N);
@@ -238,50 +253,52 @@ int main(int argc, char **argv)
       for (i = M/4*N; i < M/2*N; i += N)
           for (j = N/4; j < N/2; j++) s[i+j] = 100;
 
-      printf("ok\n");
+      //printf("ok\n");
 
-      printf("Solving...\n");
+      //printf("Solving...\n");
       resetTime();
 
       struct area areas[commSize];
-      divide(s, &areas, commSize, N, M);
+      divide(s, areas, commSize, N, M);
       double *result_area = (double*) malloc(areas[myRank].x_size*areas[myRank].y_size*sizeof(double));
 
       unsigned int iteration;
       for (iteration = 0; iteration < MAX_ITERATIONS; )
       {
           // solve
-          solve(result_area, areas[myRank].v, areas[myRank].y_size, areas[myRank].x_size, 100);
+          solve(result_area, areas[myRank].v, areas[myRank].y_size, areas[myRank].x_size, 100, areas[myRank].pos_x, areas[myRank].pos_y, areas[0].proc_size_x, areas[0].proc_size_y, myRank);
           iteration += 100;
-          printf("iterations: %d\n", iteration);
+          //printf("iterations: %d\n", iteration);
 
           ASSEMBLE
 
-          // visualize
-          unsigned char *pixels;
-          visualizeMap(x, &pixels, M*N);
+          if (myRank == 0) {
+            // visualize
+            unsigned char *pixels;
+            visualizeMap(s, &pixels, M*N);
 
-          // save bitmap
-          printf("Saving bitmap...");
-          char filename[64];
-          sprintf(filename, "images/heatmap%d.bmp", iteration);
-          if (!saveBMP(filename, pixels, M, N, 0))
-          {
-              printf("fail!\n");
-              return 1;
+            // save bitmap
+            //printf("Saving bitmap...");
+            char filename[64];
+            sprintf(filename, "images/heatmap%d.bmp", iteration);
+            if (!saveBMP(filename, pixels, M, N, 0))
+            {
+                printf("fail!\n");
+                return 1;
+            }
+            else
+            {
+                //printf("ok\n");
+            }
+            free(pixels);
           }
-          else
-          {
-              printf("ok\n");
-          }
-          free(pixels);
+          MPI_Barrier(MPI_COMM_WORLD);
       }
       double timeNeededForSolving = getTime();
       printf("End of computation!\nTime needed for solving: %fs\n", timeNeededForSolving);
 
     MPI_Finalize();
 
-    free(x);
     free(s);
 
     return 0;
