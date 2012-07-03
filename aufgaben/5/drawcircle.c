@@ -134,19 +134,7 @@ int main() {
 
   drawCircleFill(250, 200, 50, someColor);
 
-  /*
-  for (int row=0; row<HEIGHT; row++) {
-    for (int column=0; column<WIDTH; column++) {
-      int elem = WIDTH * row + column;
-      if (image[elem] == 0x00) putchar('.');
-      else if (image[elem] == 0xff) putchar('0');
-      else putchar('?');
-    }
-    putchar('\n');
-  }
-  */
-
-  saveBMP("circles.bmp", image, 500, 500, 0);
+  saveBMP("circles.bmp", image, WIDTH, HEIGHT, 0);
 
   return 0;
 }
