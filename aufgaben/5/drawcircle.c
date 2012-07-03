@@ -3,62 +3,133 @@
 
 #include <math.h>
 
-#define SCREEN_WIDTH 16
-#define SCREEN_HEIGHT 10
+#define WIDTH 157
+#define HEIGHT 64
 
-typedef unsigned char  byte;
-typedef unsigned short word;
+typedef unsigned char byte;
 
-byte VGA[SCREEN_WIDTH*SCREEN_HEIGHT];
-long SIN_ACOS[1024];
+byte image[WIDTH*HEIGHT];
 
-/**************************************************************************
- *  circle_fill                                                           *
- *    Draws and fills a circle.                                           *
- **************************************************************************/
+void swap (int *a, int *b) {
+  int tmp = *a;
+  *a = *b;
+  *b = tmp;
+}
 
-void circle_fill(int x,int y, int radius, byte color)
-{
-  long n=0,invradius=(1/(float)radius)*0x10000L;
-  int dx=0,dy=radius-1,i;
-  //word dxoffset,dyoffset,offset = (y<<8)+(y<<6)+x;
-  word dxoffset, dyoffset;
-  word offset = SCREEN_WIDTH * y + x;
+void setPixel(int x, int y) {
+  image[WIDTH * y + x] = 0xff;
+}
 
-  while (dx<=dy)
-  {
-    //dxoffset = (dx<<8) + (dx<<6);
-    //dyoffset = (dy<<8) + (dy<<6);
-    dxoffset = SCREEN_WIDTH * x;
-    dyoffset = SCREEN_WIDTH * y;
-    for(i=dy;i>=dx;i--,dyoffset-=SCREEN_WIDTH)
-    {
-      VGA[offset+i -dxoffset] = color;  /* octant 0 */
-      VGA[offset+dx-dyoffset] = color;  /* octant 1 */
-      VGA[offset-dx-dyoffset] = color;  /* octant 2 */
-      VGA[offset-i -dxoffset] = color;  /* octant 3 */
-      VGA[offset-i +dxoffset] = color;  /* octant 4 */
-      VGA[offset-dx+dyoffset] = color;  /* octant 5 */
-      VGA[offset+dx+dyoffset] = color;  /* octant 6 */
-      VGA[offset+i +dxoffset] = color;  /* octant 7 */
+void drawLine(int x0, int y0, int x1, int y1) {
+  int steep = abs(y1 - y0) > abs(x1 - x0);
+
+  if (steep) {
+    swap(&x0, &y0);
+    swap(&x1, &y1);
+  }
+  if (x0 > x1) {
+    swap(&x0, &x1);
+    swap(&y0, &y1);
+  }
+
+  int deltax = x1 - x0;
+  int deltay = abs(y1 - y0);
+  int error = deltax / 2;
+  int ystep;
+  int y = y0;
+
+  if (y0 < y1) ystep = 1;
+  else ystep = -1;
+
+  for (int x=x0; x<=x1; x++) {
+    if (steep) setPixel(y,x);
+    else setPixel(x,y);
+
+    error = error - deltay;
+    if ( error < 0) {
+      y = y + ystep;
+      error = error + deltax;
     }
-    dx++;
-    n+=invradius;
-    dy = (int)((radius * SIN_ACOS[(int)(n>>6)]) >> 16);
+  }
+
+}
+
+void drawCircle(int x0, int y0, int radius) {
+  int f = 1 - radius;
+  int ddF_x = 1;
+  int ddF_y = -2 * radius;
+  int x = 0;
+  int y = radius;
+ 
+  setPixel(x0, y0 + radius);
+  setPixel(x0, y0 - radius);
+  setPixel(x0 + radius, y0);
+  setPixel(x0 - radius, y0);
+ 
+  while(x < y) {
+    // ddF_x == 2 * x + 1;
+    // ddF_y == -2 * y;
+    // f == x*x + y*y - radius*radius + 2*x - y + 1;
+    if(f >= 0) {
+      y--;
+      ddF_y += 2;
+      f += ddF_y;
+    }
+    x++;
+    ddF_x += 2;
+    f += ddF_x;    
+    setPixel(x0 + x, y0 + y);
+    setPixel(x0 - x, y0 + y);
+    setPixel(x0 + x, y0 - y);
+    setPixel(x0 - x, y0 - y);
+    setPixel(x0 + y, y0 + x);
+    setPixel(x0 - y, y0 + x);
+    setPixel(x0 + y, y0 - x);
+    setPixel(x0 - y, y0 - x);
+  }
+}
+
+void drawCircleFill(int x0, int y0, int radius) {
+  int f = 1 - radius;
+  int ddF_x = 1;
+  int ddF_y = -2 * radius;
+  int x = 0;
+  int y = radius;
+ 
+  drawLine(x0, y0, x0, y0 + radius);
+  drawLine(x0, y0, x0, y0 - radius);
+  drawLine(x0, y0, x0 + radius, y0);
+  drawLine(x0, y0, x0 - radius, y0);
+ 
+  while(x < y) {
+    // ddF_x == 2 * x + 1;
+    // ddF_y == -2 * y;
+    // f == x*x + y*y - radius*radius + 2*x - y + 1;
+    if(f >= 0) {
+      y--;
+      ddF_y += 2;
+      f += ddF_y;
+    }
+    x++;
+    ddF_x += 2;
+    f += ddF_x;    
+    drawLine(x0 - x, y0 + y, x0 + x, y0 + y);
+    drawLine(x0 - x, y0 - y, x0 + x, y0 - y);
+    drawLine(x0 - y, y0 + x, x0 + y, y0 + x);
+    drawLine(x0 - y, y0 - x, x0 + y, y0 - x);
   }
 }
 
 int main() {
-  for(int i=0;i<1024;i++) {
-    SIN_ACOS[i]=sin(acos((float)i/1024))*0x10000L;
-  }
+  drawCircleFill(30, 25, 10);
 
-  circle_fill(10, 10, 7, 0x0f);
-
-  for (int row=0; row<SCREEN_HEIGHT; row++) {
-    for (int column=0; column<SCREEN_WIDTH; column++) {
-      printf("%1x", VGA[row*SCREEN_HEIGHT+column]);
+  for (int row=0; row<HEIGHT; row++) {
+    for (int column=0; column<WIDTH; column++) {
+      int elem = WIDTH * row + column;
+      if (image[elem] == 0x00) putchar('.');
+      else if (image[elem] == 0xff) putchar('0');
+      else putchar('?');
     }
-    printf("\n");
+    putchar('\n');
   }
 }
