@@ -1,13 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-
-#include "bitmap.c"
-
 #define WIDTH 500
 #define HEIGHT 500
 
 typedef unsigned char byte;
+
 typedef struct {
   byte blue;
   byte green;
@@ -16,30 +11,24 @@ typedef struct {
 
 color image[WIDTH*HEIGHT];
 
-void swap (int *a, int *b) {
-  int tmp = *a;
-  *a = *b;
-  *b = tmp;
-}
-
-void setPixel(int x, int y, color pcolor) {
-  image[WIDTH * y + x] = pcolor;
-}
+#define SWAP(a, b)  do { a ^= b; b ^= a; a ^= b; } while ( 0 )
+#define SET_PIXEL(x, y, pcolor) image[WIDTH * y + x] = pcolor
+#define ABS(a) ( (a<0) ? -1*(a) : (a) )
 
 void drawLine(int x0, int y0, int x1, int y1, color lcolor) {
-  int steep = abs(y1 - y0) > abs(x1 - x0);
+  int steep = ABS(y1 - y0) > ABS(x1 - x0);
 
   if (steep) {
-    swap(&x0, &y0);
-    swap(&x1, &y1);
+    SWAP(x0, y0);
+    SWAP(x1, y1);
   }
   if (x0 > x1) {
-    swap(&x0, &x1);
-    swap(&y0, &y1);
+    SWAP(x0, x1);
+    SWAP(y0, y1);
   }
 
   int deltax = x1 - x0;
-  int deltay = abs(y1 - y0);
+  int deltay = ABS(y1 - y0);
   int error = deltax / 2;
   int ystep;
   int y = y0;
@@ -48,8 +37,8 @@ void drawLine(int x0, int y0, int x1, int y1, color lcolor) {
   else ystep = -1;
 
   for (int x=x0; x<=x1; x++) {
-    if (steep) setPixel(y, x, lcolor);
-    else setPixel(x, y, lcolor);
+    if (steep) SET_PIXEL(y, x, lcolor);
+    else SET_PIXEL(x, y, lcolor);
 
     error = error - deltay;
     if ( error < 0) {
@@ -67,10 +56,10 @@ void drawCircle(int x0, int y0, int radius, color ccolor) {
   int x = 0;
   int y = radius;
  
-  setPixel(x0, y0 + radius, ccolor);
-  setPixel(x0, y0 - radius, ccolor);
-  setPixel(x0 + radius, y0, ccolor);
-  setPixel(x0 - radius, y0, ccolor);
+  SET_PIXEL(x0, y0 + radius, ccolor);
+  SET_PIXEL(x0, y0 - radius, ccolor);
+  SET_PIXEL(x0 + radius, y0, ccolor);
+  SET_PIXEL(x0 - radius, y0, ccolor);
  
   while(x < y) {
     // ddF_x == 2 * x + 1;
@@ -84,14 +73,14 @@ void drawCircle(int x0, int y0, int radius, color ccolor) {
     x++;
     ddF_x += 2;
     f += ddF_x;    
-    setPixel(x0 + x, y0 + y, ccolor);
-    setPixel(x0 - x, y0 + y, ccolor);
-    setPixel(x0 + x, y0 - y, ccolor);
-    setPixel(x0 - x, y0 - y, ccolor);
-    setPixel(x0 + y, y0 + x, ccolor);
-    setPixel(x0 - y, y0 + x, ccolor);
-    setPixel(x0 + y, y0 - x, ccolor);
-    setPixel(x0 - y, y0 - x, ccolor);
+    SET_PIXEL(x0 + x, y0 + y, ccolor);
+    SET_PIXEL(x0 - x, y0 + y, ccolor);
+    SET_PIXEL(x0 + x, y0 - y, ccolor);
+    SET_PIXEL(x0 - x, y0 - y, ccolor);
+    SET_PIXEL(x0 + y, y0 + x, ccolor);
+    SET_PIXEL(x0 - y, y0 + x, ccolor);
+    SET_PIXEL(x0 + y, y0 - x, ccolor);
+    SET_PIXEL(x0 - y, y0 - x, ccolor);
   }
 }
 
@@ -124,17 +113,4 @@ void drawCircleFill(int x0, int y0, int radius, color ccolor) {
     drawLine(x0 - y, y0 + x, x0 + y, y0 + x, ccolor);
     drawLine(x0 - y, y0 - x, x0 + y, y0 - x, ccolor);
   }
-}
-
-int main() {
-  color someColor;
-  someColor.red = 0xab;
-  someColor.green = 0xe1;
-  someColor.blue = 0x20;
-
-  drawCircleFill(250, 200, 50, someColor);
-
-  saveBMP("circles.bmp", image, WIDTH, HEIGHT, 0);
-
-  return 0;
 }
