@@ -1,9 +1,7 @@
 #include "drawcircle.h"
 #include "intmath.h"
 
-color image[WIDTH*HEIGHT];
-
-void drawLine(int x0, int y0, int x1, int y1, color lcolor) {
+void drawLine(unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, color lcolor) {
   int steep = ABS(y1 - y0) > ABS(x1 - x0);
 
   if (steep) {
@@ -37,7 +35,7 @@ void drawLine(int x0, int y0, int x1, int y1, color lcolor) {
 
 }
 
-void drawCircle(int x0, int y0, int radius, color ccolor) {
+void drawCircle(unsigned int x0, unsigned int y0, unsigned int radius, color ccolor) {
   int f = 1 - radius;
   int ddF_x = 1;
   int ddF_y = -2 * radius;
@@ -72,7 +70,7 @@ void drawCircle(int x0, int y0, int radius, color ccolor) {
   }
 }
 
-void drawCircleFill(int x0, int y0, int radius, color ccolor) {
+void drawCircleFill(unsigned int x0, unsigned int y0, unsigned int radius, color ccolor) {
   int f = 1 - radius;
   int ddF_x = 1;
   int ddF_y = -2 * radius;
@@ -101,4 +99,8 @@ void drawCircleFill(int x0, int y0, int radius, color ccolor) {
     drawLine(x0 - y, y0 + x, x0 + y, y0 + x, ccolor);
     drawLine(x0 - y, y0 - x, x0 + y, y0 - x, ccolor);
   }
+}
+
+void dipDrawCircleFill(double x0, double  y0, double radius, color ccolor) {
+  drawCircleFill((int)x0*WIDTH/FIELD_MAX_X, (int)y0*HEIGHT/FIELD_MAX_Y, (int)radius*WIDTH/FIELD_MAX_X, ccolor);
 }
