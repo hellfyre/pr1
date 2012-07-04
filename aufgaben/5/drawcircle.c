@@ -1,19 +1,7 @@
-#define WIDTH 500
-#define HEIGHT 500
-
-typedef unsigned char byte;
-
-typedef struct {
-  byte blue;
-  byte green;
-  byte red;
-} color;
+#include "drawcircle.h"
+#include "intmath.h"
 
 color image[WIDTH*HEIGHT];
-
-#define SWAP(a, b)  do { a ^= b; b ^= a; a ^= b; } while ( 0 )
-#define SET_PIXEL(x, y, pcolor) image[WIDTH * y + x] = pcolor
-#define ABS(a) ( (a<0) ? -1*(a) : (a) )
 
 void drawLine(int x0, int y0, int x1, int y1, color lcolor) {
   int steep = ABS(y1 - y0) > ABS(x1 - x0);
