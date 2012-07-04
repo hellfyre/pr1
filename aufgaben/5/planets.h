@@ -2,14 +2,15 @@
 #define __PLANETS_H__
 
 typedef struct {
-  int x;  // x-pos
-  int y;  // y-pos
-  int vx; // x-velocity
-  int vy; // y-velocity
-  int m;  // mass
-  int r;  // radius
+  double x;  // x-pos
+  double y;  // y-pos
+  double vx; // x-velocity
+  double vy; // y-velocity
+  double m;  // mass
+  double r;  // radius
 } planet;
 
 int collide(planet p1, planet p2);
+planet com(planet planets[], int size);
 
 #endif /* __PLANETS_H__ */
