@@ -10,7 +10,8 @@ typedef struct {
   double r;  // radius
 } planet;
 
-int collide(planet p1, planet p2);
+int planet_planet_collision(planet p1, planet p2);
+int planet_edge_collision(planet p);
 planet com(planet planets[], int size);
 
 #endif /* __PLANETS_H__ */

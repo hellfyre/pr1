@@ -1,12 +1,27 @@
 #include "planets.h"
 #include "intmath.h"
+#include "drawcircle.h"
 
 #include <math.h>
 
-int collide(planet p1, planet p2) {
+int planet_planet_collision(planet p1, planet p2) {
   double radii = p1.r + p2.r;
-  return (  ( fabs(p1.x-p2.x) <= radii ) &&
-            ( fabs(p1.y-p2.y) <= radii ) );
+  int ret = 0;
+  if ( fabs(p1.x-p2.x) <= radii ) { // collision x
+    ret = 1;
+  }
+  if ( fabs(p1.y-p2.y) <= radii ) { // collision y
+    ret += 2;
+  }
+  return ret;
+}
+
+int planet_edge_collision(planet p) {
+  if (p.x < p.r) return 1;
+  else if (p.x + p.r > FIELD_MAX_X) return 2;
+  else if (p.y < p.r) return 3;
+  else if (p.y + p.r > FIELD_MAX_Y) return 4;
+  else return 0;
 }
 
 planet com(planet planets[], int size) {
