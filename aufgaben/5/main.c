@@ -1,32 +1,53 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <sys/time.h>
+
 #include "drawcircle.h"
 #include "planets.h"
 #include "bitmap.c"
 
+#define N 100
+
 int main() {
-  planet p1, p2;
-  p1.x = 256;
-  p1.y = 256;
-  p1.r = 100;
+  planet *planets = malloc(sizeof(planet)*N);
+  color *colors = malloc(sizeof(color)*N);
+  
+  struct timeval time_seed;
+  gettimeofday(&time_seed, NULL);
+  srand(time_seed.tv_sec);
 
-  p2.x = 300;
-  p2.y = 50;
-  p2.r = 20;
+  for (int i=0; i<N; i++) {
+    int radius = rand() % (8 - 1) + 1;
+    planets[i].r = radius;
+    planets[i].x = rand() % (FIELD_MAX_X - 2*radius) + radius;
+    planets[i].y = rand() % (FIELD_MAX_Y - 2*radius) + radius;
+    planets[i].m = rand();
+    planets[i].vx = rand();
+    planets[i].vy = rand();
 
-  printf("%d\n", collide(p1, p2));
-  p2.r = 6;
-  printf("%d\n", collide(p1, p2));
+    colors[i].red   = rand() % 0x100;
+    colors[i].green = rand() % 0x100;
+    colors[i].blue  = rand() % 0x100;
 
-  color someColor;
-  someColor.red = 0xab;
-  someColor.green = 0xe1;
-  someColor.blue = 0x20;
-  color someOtherColor;
-  someOtherColor.red = 0xff;
-  someOtherColor.green = 0x10;
-  someOtherColor.blue = 0x10;
+    /*
+    printf("%d: r=%f x=%f y=%f m=%f vx=%f vy=%f rgb=%x%x%x\n",
+            i,
+            planets[i].r,
+            planets[i].x,
+            planets[i].y,
+            planets[i].m,
+            planets[i].vx,
+            planets[i].vy,
+            colors[i].red,
+            colors[i].green,
+            colors[i].blue);
+    */
+  }
 
-  dipDrawCircleFill(p1.x, p1.y, p1.r, someColor);
-  dipDrawCircleFill(p2.x, p2.y, p2.r, someOtherColor);
+  for (int i=0; i<N; i++) {
+    dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, colors[i]);
+  }
 
   saveBMP("circles.bmp", (unsigned char *) image, WIDTH, HEIGHT, 0);
 
