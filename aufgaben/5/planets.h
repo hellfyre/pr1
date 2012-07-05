@@ -1,6 +1,8 @@
 #ifndef __PLANETS_H__
 #define __PLANETS_H__
 
+#include "drawcircle.h"
+
 typedef struct {
   double x;  // x-pos
   double y;  // y-pos
@@ -8,6 +10,7 @@ typedef struct {
   double vy; // y-velocity
   double m;  // mass
   double r;  // radius
+  color *c;
 } planet;
 
 int planet_planet_collision(planet p1, planet p2);
