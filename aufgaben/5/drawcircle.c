@@ -77,6 +77,13 @@ void drawCircleFill(unsigned int x0, unsigned int y0, unsigned int radius, color
   int x = 0;
   int y = radius;
  
+  /*
+  drawLine(x0-radius, y0-radius, x0+radius, y0-radius, ccolor);
+  drawLine(x0-radius, y0-radius, x0-radius, y0+radius, ccolor);
+  drawLine(x0+radius, y0+radius, x0-radius, y0+radius, ccolor);
+  drawLine(x0+radius, y0+radius, x0+radius, y0-radius, ccolor);
+  */
+
   drawLine(x0, y0, x0, y0 + radius, ccolor);
   drawLine(x0, y0, x0, y0 - radius, ccolor);
   drawLine(x0, y0, x0 + radius, y0, ccolor);
