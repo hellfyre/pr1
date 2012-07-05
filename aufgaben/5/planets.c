@@ -24,6 +24,12 @@ int planet_edge_collision(planet p) {
   else return 0;
 }
 
+int planet_compare(const void *a, const void *b) {
+  const planet *p1 = a;
+  const planet *p2 = b;
+  return p1->x - p2->x;
+}
+
 planet com(planet planets[], int size) {
   planet center;
   center.x = 0;
