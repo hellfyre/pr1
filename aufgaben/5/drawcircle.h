@@ -5,6 +5,7 @@
 #define HEIGHT WIDTH
 #define FIELD_MAX_X 512
 #define FIELD_MAX_Y FIELD_MAX_X
+#define RADIUS_MAX FIELD_MAX_X/64
 
 typedef unsigned char byte;
 
