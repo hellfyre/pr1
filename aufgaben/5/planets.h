@@ -10,7 +10,6 @@ typedef struct {
   double vy; // y-velocity
   double m;  // mass
   double r;  // radius
-  color *c;
 } planet;
 
 int planet_planet_collision(planet p1, planet p2);

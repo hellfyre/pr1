@@ -53,7 +53,6 @@ int main() {
     colors[i].red   = random_in_range(0, 0x100);
     colors[i].green = random_in_range(0, 0x100);
     colors[i].blue  = random_in_range(0, 0x100);
-    planets[i].c = &colors[i];
   }
 
   // sort the planets by their position in x
@@ -106,7 +105,7 @@ int main() {
 
     memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
     for (int i=0; i<N; i++) {
-      dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
+      dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, colors[i]);
     }
 
     char filename[1024];
@@ -160,7 +159,7 @@ int main() {
           dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, c);
         }
         else {
-          dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
+          dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, colors[i]);
         }
       }
 
