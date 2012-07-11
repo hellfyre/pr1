@@ -4,6 +4,10 @@
 void drawLine(unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1, color lcolor) {
   int steep = ABS(y1 - y0) > ABS(x1 - x0);
 
+	// important check, if out of bounds !!
+	if(x0<1 || y0<0 || x1<0 || y1<0) { return -1; }
+	if(x1>FIELD_MAX_X*2 || y0>FIELD_MAX_Y*2 || y1>FIELD_MAX_Y*2 || x0>FIELD_MAX_X*2) { return -1;}
+
   if (steep) {
     SWAP(x0, y0);
     SWAP(x1, y1);

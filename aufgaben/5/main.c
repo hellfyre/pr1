@@ -9,7 +9,8 @@
 #include "planets.h"
 #include "bitmap.c"
 
-#define N 1500
+#define N 100
+#define TIMESTEPS 100
 
 int random_in_range (unsigned int min, unsigned int max) {
 
@@ -42,9 +43,10 @@ int main() {
     planets[i].r = radius;
     planets[i].x = random_in_range(radius, FIELD_MAX_X - radius); // generate planets only inside the boundaries of our world
     planets[i].y = random_in_range(radius, FIELD_MAX_Y - radius);
-    planets[i].m = rand();
-    planets[i].vx = rand();
-    planets[i].vy = rand();
+    planets[i].m = radius*6;//rand();
+			printf("Mass: %f \n",planets[i].m);
+    planets[i].vx = random_in_range(-3.0,3.0);
+    planets[i].vy = random_in_range(-3.0,3.0);
 
     colors[i].red   = random_in_range(0, 0x100);
     colors[i].green = random_in_range(0, 0x100);
@@ -103,15 +105,31 @@ int main() {
   }
 
   loops++;
-
+/*
   memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
   for (int i=0; i<N; i++) {
     dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
   }
-
+	
   char filename[1024];
   sprintf(filename, "images/planets%03d.bmp", loops);
-  saveBMP(filename, (unsigned char *) image, WIDTH, HEIGHT, 0);
+  saveBMP(filename, (unsigned char *) image, WIDTH, HEIGHT, 0); 
+	*/
+
+	//timesteps
+	char filename[1024];
+	sprintf(filename, "images/planets001.bmp");
+	saveBMP(filename, (unsigned char *) image, WIDTH, HEIGHT, 0); 
+
+	for(int i=0; i<TIMESTEPS; i++){		
+	  memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
+
+  	planet_moveAll(planets,N);
+
+		//save picture of this TIMESTEP
+		sprintf(filename, "images/planets%03d.bmp", i+2);
+		saveBMP(filename, (unsigned char *) image, WIDTH, HEIGHT, 0); 		
+	}
 
   return 0;
 }

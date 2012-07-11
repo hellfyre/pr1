@@ -4,6 +4,45 @@
 
 #include <math.h>
 
+/* take one planet & calc new velocity based on mass and position (gravity) of all other planets, then move him in that direction */
+void planet_moveAll(planet planets[], int size){	
+	double distance,directionx,directiony,accelerationAmount;	
+
+	for (int j=0; j<size; j++) {
+	  	for (int k=0; k<size && j!=k; k++) {
+				//calc new veclocity
+				distance = sqrt((planets[j].x - planets[k].x)*(planets[j].x - planets[k].x) + (planets[j].y - planets[k].y)*(planets[j].y - planets[k].y));
+				directionx = planets[k].x - planets[j].x;
+				directiony = planets[k].y - planets[j].y;
+				accelerationAmount = planets[k].m/(distance*distance);
+
+				planets[j].vx += accelerationAmount*directionx;		
+				planets[j].vy += accelerationAmount*directiony;		
+
+				//check collision
+				if(planet_planet_collision(planets[j],planets[k]) > 0){
+					//printf("collision of planet %d with planet %d\n",j,k);
+					bewegungsrichtungUmkehren(planets[j]);
+					bewegungsrichtungUmkehren(planets[k]);
+
+				}
+				//printf("%d with %d: distance=%f	vx:%f	vy:%f\n",j,k,distance,planets[j].vx,planets[j].vy);
+			}
+			//move planet
+			planets[j].x = planets[j].x + planets[j].vx;
+			planets[j].y = planets[j].y + planets[j].vy;
+		
+			//draw planet
+   		dipDrawCircleFill(planets[j].x, planets[j].y, planets[j].r, *planets[j].c);
+	  }
+	
+}
+
+void bewegungsrichtungUmkehren(planet p){
+		p.vx *= -1;
+		p.vy *= -1;
+}
+
 int planet_planet_collision(planet p1, planet p2) {
   double radii = p1.r + p2.r;
   int ret = 0;
