@@ -2,11 +2,6 @@ CC = mpicc
 CFLAGS = -O3 -Wall -std=gnu99
 LDFLAGS = -lrt -lm
 
-all: cleanvideo program
-	./program
-	/usr/bin/ffmpeg -b 1800 -r 3 -i images/planets%03d.bmp images/video.mp4
-	mplayer -fs images/video.mp4
-
 program: program.o planets.o drawcircle.o
 	$(CC) $^ -o $@ $(LDFLAGS)
 
@@ -21,6 +16,11 @@ planets.o: planets.c
 
 drawcircle.o: drawcircle.c
 	$(CC) $(CFLAGS) -o $@ -c $<
+
+all: cleanvideo program
+	./program
+	/usr/bin/ffmpeg -b 1800 -r 3 -i images/planets%03d.bmp images/video.mp4
+	mplayer -fs images/video.mp4
 
 video: images/*.bmp
 	/usr/bin/ffmpeg -b 1800 -r 3 -i images/planets%03d.bmp images/video.mp4
