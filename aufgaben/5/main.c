@@ -9,8 +9,9 @@
 #include "planets.h"
 #include "bitmap.c"
 
-#define N 100
+#define N         10
 #define TIMESTEPS 100
+#define STEPSIZE  5
 
 int random_in_range (unsigned int min, unsigned int max) {
 
@@ -32,6 +33,7 @@ int random_in_range (unsigned int min, unsigned int max) {
 }
 
 int main() {
+  const double G = -6.673e-11;
   planet *planets = malloc(sizeof(planet)*N);
   color *colors = malloc(sizeof(color)*N);
   
