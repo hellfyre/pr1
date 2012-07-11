@@ -1,5 +1,5 @@
 CC = mpicc
-CFLAGS = -O3 -Wall -std=gnu99
+CFLAGS = -O0 -Wall -std=gnu99
 LDFLAGS = -lrt -lm
 
 program: program.o planets.o drawcircle.o
