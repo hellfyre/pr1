@@ -45,10 +45,10 @@ int main() {
     planets[i].r = radius;
     planets[i].x = random_in_range(radius, FIELD_MAX_X - radius); // generate planets only inside the boundaries of our world
     planets[i].y = random_in_range(radius, FIELD_MAX_Y - radius);
-    planets[i].m = radius*6;//rand();
-			printf("Mass: %f \n",planets[i].m);
-    planets[i].vx = random_in_range(-3.0,3.0);
-    planets[i].vy = random_in_range(-3.0,3.0);
+    planets[i].m = radius*20000000000;
+			//printf("Mass[%d]: %f \n", i, planets[i].m);
+    planets[i].vx = random_in_range(0,6) - 3.0;
+    planets[i].vy = random_in_range(0,6) - 3.0;
 
     colors[i].red   = random_in_range(0, 0x100);
     colors[i].green = random_in_range(0, 0x100);
