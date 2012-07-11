@@ -8,6 +8,7 @@
 #include "drawcircle.h"
 #include "planets.h"
 #include "bitmap.c"
+#include "gettime.c"
 
 #define N         50
 #define TIMESTEPS 100
@@ -97,74 +98,84 @@ int main() {
 
   loops++;
   
-  memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
-  for (int i=0; i<N; i++) {
-    dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
-  }
-	
-	char filename[1024];
-	saveBMP("images/planets000.bmp", (unsigned char *) image, WIDTH, HEIGHT, 0); 
+  int myRank, commSize;
+  MPI_Init(&argc, &argv);
 
-	//timesteps
-	for(int t=0; t<TIMESTEPS; t++){		
-
-	  memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
-
-  	//planet_moveAll(planets,N);
-    double fx = 0, fy = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+    MPI_Comm_size(MPI_COMM_WORLD, &commSize);
+  
+    memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
     for (int i=0; i<N; i++) {
-      for (int j=0; j<N; j++) {
-        if (i == j) continue;
-        double dist = sqrt( pow(planets[i].x - planets[j].x,2) + pow(planets[i].y - planets[j].y,2) );
-        double fmass = G * planets[i].m * planets[j].m / pow(dist,3);
-        fx += fmass * (planets[i].x - planets[j].x);
-        fy += fmass * (planets[i].y - planets[j].y);
+      dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
+    }
+    
+    char filename[1024];
+    saveBMP("images/planets000.bmp", (unsigned char *) image, WIDTH, HEIGHT, 0); 
+
+    //timesteps
+    reset_time();
+    for(int t=0; t<TIMESTEPS; t++){		
+
+      memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
+
+      double fx = 0, fy = 0;
+      for (int i=0; i<N; i++) {
+        for (int j=0; j<N; j++) {
+          if (i == j) continue;
+          double dist = sqrt( pow(planets[i].x - planets[j].x,2) + pow(planets[i].y - planets[j].y,2) );
+          double fmass = G * planets[i].m * planets[j].m / pow(dist,3);
+          fx += fmass * (planets[i].x - planets[j].x);
+          fy += fmass * (planets[i].y - planets[j].y);
+        }
+
+        // x_k = x_(k-1) + dt * v_(k-1)
+        planets[i].x += STEPSIZE * planets[i].vx;
+        planets[i].y += STEPSIZE * planets[i].vy;
+        if (planets[i].x < 0) planets[i].x += FIELD_MAX_X;
+        if (planets[i].y < 0) planets[i].y += FIELD_MAX_Y;
+        if (planets[i].x > FIELD_MAX_X) planets[i].x -= FIELD_MAX_X;
+        if (planets[i].y > FIELD_MAX_Y) planets[i].y -= FIELD_MAX_Y;
+
+        // v_k = v_(k-1) + dt * a_(k-1)
+        planets[i].vx += STEPSIZE * fx/planets[i].m;
+        planets[i].vy += STEPSIZE * fy/planets[i].m;
+
       }
 
-      // x_k = x_(k-1) + dt * v_(k-1)
-      planets[i].x += STEPSIZE * planets[i].vx;
-      planets[i].y += STEPSIZE * planets[i].vy;
-      if (planets[i].x < 0) planets[i].x += FIELD_MAX_X;
-      if (planets[i].y < 0) planets[i].y += FIELD_MAX_Y;
-      if (planets[i].x > FIELD_MAX_X) planets[i].x -= FIELD_MAX_X;
-      if (planets[i].y > FIELD_MAX_Y) planets[i].y -= FIELD_MAX_Y;
+      for (int i=0; i<N; i++) {
+        int collision = 0;
+        for (int j=i+1; j<N; j++) {
+          if(planet_planet_collision(planets[j],planets[i]) > 0){
+            collision = 1;
+            bewegungsrichtungUmkehren(&planets[j]);
+            bewegungsrichtungUmkehren(&planets[i]);
 
-      // v_k = v_(k-1) + dt * a_(k-1)
-      planets[i].vx += STEPSIZE * fx/planets[i].m;
-      planets[i].vy += STEPSIZE * fy/planets[i].m;
-
-    }
-
-    for (int i=0; i<N; i++) {
-      int collision = 0;
-      for (int j=i+1; j<N; j++) {
-        if(planet_planet_collision(planets[j],planets[i]) > 0){
-          collision = 1;
-          bewegungsrichtungUmkehren(&planets[j]);
-          bewegungsrichtungUmkehren(&planets[i]);
-
+          }
+        }
+        if (collision) {
+          color c;
+          c.red = 255;
+          c.green = 0;
+          c.blue = 0;
+          dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, c);
+        }
+        else {
+          dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
         }
       }
-      if (collision) {
-        color c;
-        c.red = 255;
-        c.green = 0;
-        c.blue = 0;
-        dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, c);
-      }
-      else {
-        dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
-      }
-    }
 
-		//save picture of this TIMESTEP
-    for (int i=0; i<N; i++) {
-      //dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
+      //save picture of this TIMESTEP
+      for (int i=0; i<N; i++) {
+        //dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
+      }
+    
+      sprintf(filename, "images/planets%03d.bmp", t+1);
+      saveBMP(filename, (unsigned char *) image, WIDTH, HEIGHT, 0); 		
     }
-	
-		sprintf(filename, "images/planets%03d.bmp", t+1);
-		saveBMP(filename, (unsigned char *) image, WIDTH, HEIGHT, 0); 		
-	}
+    double time = get_time();
+    printf("Serial: %f seconds\n", time);
+
+  MPI_Finalize();
 
   return 0;
 }
