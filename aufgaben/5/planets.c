@@ -6,6 +6,7 @@
 
 /* take one planet & calc new velocity based on mass and position (gravity) of all other planets, then move him in that direction */
 void planet_moveAll(planet planets[], int size){	
+  /*
 	double distance,directionx,directiony,accelerationAmount;	
 
 	for (int j=0; j<size; j++) {
@@ -35,24 +36,17 @@ void planet_moveAll(planet planets[], int size){
 			//draw planet
    		dipDrawCircleFill(planets[j].x, planets[j].y, planets[j].r, *planets[j].c);
 	  }
-	
+	*/
 }
 
-void bewegungsrichtungUmkehren(planet p){
-		p.vx *= -1;
-		p.vy *= -1;
+void bewegungsrichtungUmkehren(planet *p){
+		p->vx *= -1;
+		p->vy *= -1;
 }
 
 int planet_planet_collision(planet p1, planet p2) {
   double radii = p1.r + p2.r;
-  int ret = 0;
-  if ( fabs(p1.x-p2.x) <= radii ) { // collision x
-    ret = 1;
-  }
-  if ( fabs(p1.y-p2.y) <= radii ) { // collision y
-    ret += 2;
-  }
-  return ret;
+  return ( fabs(p1.x-p2.x) <= radii && fabs(p1.y-p2.y) <= radii );
 }
 
 int planet_edge_collision(planet p) {

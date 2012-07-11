@@ -17,5 +17,6 @@ int planet_planet_collision(planet p1, planet p2);
 int planet_edge_collision(planet p);
 int planet_compare(const void *a, const void *b);
 planet com(planet planets[], int size);
+void bewegungsrichtungUmkehren(planet *p);
 
 #endif /* __PLANETS_H__ */

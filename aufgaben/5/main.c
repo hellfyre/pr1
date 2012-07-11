@@ -9,7 +9,7 @@
 #include "planets.h"
 #include "bitmap.c"
 
-#define N         10
+#define N         50
 #define TIMESTEPS 100
 #define STEPSIZE  5
 
@@ -46,7 +46,6 @@ int main() {
     planets[i].x = random_in_range(radius, FIELD_MAX_X - radius); // generate planets only inside the boundaries of our world
     planets[i].y = random_in_range(radius, FIELD_MAX_Y - radius);
     planets[i].m = radius*20000000000;
-			//printf("Mass[%d]: %f \n", i, planets[i].m);
     planets[i].vx = random_in_range(0,6) - 3.0;
     planets[i].vy = random_in_range(0,6) - 3.0;
 
@@ -63,18 +62,6 @@ int main() {
   int loops = 0;
   int collisions = 1;
   while (collisions > 0) {
-    /*
-    printf("%dth while loop\n", ++loops);
-
-    memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
-    for (int i=0; i<N; i++) {
-      dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
-    }
-
-    char filename[1024];
-    sprintf(filename, "images/planets%03d.bmp", loops);
-    saveBMP(filename, (unsigned char *) image, WIDTH, HEIGHT, 0);
-    */
 
     collisions = 0;
     for (int i=0; i<N-1; i++) {
@@ -112,7 +99,6 @@ int main() {
   
   memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
   for (int i=0; i<N; i++) {
-    printf("Planet[%d]: x=%f y=%f vx=%f vy=%f m=%f\n", i, planets[i].x, planets[i].y, planets[i].vx, planets[i].vy, planets[i].m);
     dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
   }
 	
@@ -134,7 +120,6 @@ int main() {
         fx += fmass * (planets[i].x - planets[j].x);
         fy += fmass * (planets[i].y - planets[j].y);
       }
-      printf("Planet[%d] forcex=%f forcey=%f\n", i, fx, fy);
 
       // x_k = x_(k-1) + dt * v_(k-1)
       planets[i].x += STEPSIZE * planets[i].vx;
@@ -147,15 +132,34 @@ int main() {
       // v_k = v_(k-1) + dt * a_(k-1)
       planets[i].vx += STEPSIZE * fx/planets[i].m;
       planets[i].vy += STEPSIZE * fy/planets[i].m;
-      printf("Planets[%d] step %d x=%f y=%f vx=%f vy=%f\n", i, t, planets[i].x, planets[i].y, planets[i].vx, planets[i].vy);
 
-      dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
+    }
 
+    for (int i=0; i<N; i++) {
+      int collision = 0;
+      for (int j=i+1; j<N; j++) {
+        if(planet_planet_collision(planets[j],planets[i]) > 0){
+          collision = 1;
+          bewegungsrichtungUmkehren(&planets[j]);
+          bewegungsrichtungUmkehren(&planets[i]);
+
+        }
+      }
+      if (collision) {
+        color c;
+        c.red = 255;
+        c.green = 0;
+        c.blue = 0;
+        dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, c);
+      }
+      else {
+        dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
+      }
     }
 
 		//save picture of this TIMESTEP
     for (int i=0; i<N; i++) {
-      dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
+      //dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
     }
 	
 		sprintf(filename, "images/planets%03d.bmp", t+1);
