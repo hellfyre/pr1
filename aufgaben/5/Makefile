@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O3 -Wall -std=gnu99 -ggdb
+CFLAGS = -O0 -Wall -std=gnu99 -ggdb
 LDFLAGS = -lrt -lm
 
 all: cleanvideo program
