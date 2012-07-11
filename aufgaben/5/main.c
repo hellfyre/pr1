@@ -122,6 +122,7 @@ int main(int argc, char *argv[]) {
       for (int i=0; i<N; i++) {
         for (int j=0; j<N; j++) {
           if (i == j) continue;
+          // calculating F_ij between any possible pair of planets and aggregating per planet
           double dist = sqrt( pow(planets[i].x - planets[j].x,2) + pow(planets[i].y - planets[j].y,2) );
           double fmass = G * planets[i].m * planets[j].m / pow(dist,3);
           fx += fmass * (planets[i].x - planets[j].x);
@@ -142,6 +143,8 @@ int main(int argc, char *argv[]) {
 
       }
 
+      // checking for collisisons. if coll, reverse direction of colliding planets
+      // also: make 'em red for one frame
       for (int i=0; i<N; i++) {
         int collision = 0;
         for (int j=i+1; j<N; j++) {
