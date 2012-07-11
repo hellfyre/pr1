@@ -63,16 +63,18 @@ int main() {
   int loops = 0;
   int collisions = 1;
   while (collisions > 0) {
+    /*
     printf("%dth while loop\n", ++loops);
 
-      memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
-      for (int i=0; i<N; i++) {
-        dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
-      }
+    memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
+    for (int i=0; i<N; i++) {
+      dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
+    }
 
-      char filename[1024];
-      sprintf(filename, "images/planets%03d.bmp", loops);
-      saveBMP(filename, (unsigned char *) image, WIDTH, HEIGHT, 0);
+    char filename[1024];
+    sprintf(filename, "images/planets%03d.bmp", loops);
+    saveBMP(filename, (unsigned char *) image, WIDTH, HEIGHT, 0);
+    */
 
     collisions = 0;
     for (int i=0; i<N-1; i++) {
@@ -107,29 +109,29 @@ int main() {
   }
 
   loops++;
-/*
+  
   memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
   for (int i=0; i<N; i++) {
+    printf("Planet[%d]: x=%f y=%f vx=%f vy=%f m=%f\n", i, planets[i].x, planets[i].y, planets[i].vx, planets[i].vy, planets[i].m);
     dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
   }
 	
-  char filename[1024];
-  sprintf(filename, "images/planets%03d.bmp", loops);
-  saveBMP(filename, (unsigned char *) image, WIDTH, HEIGHT, 0); 
-	*/
+	char filename[1024];
+	saveBMP("images/planets000.bmp", (unsigned char *) image, WIDTH, HEIGHT, 0); 
 
 	//timesteps
-	char filename[1024];
-	sprintf(filename, "images/planets001.bmp");
-	saveBMP(filename, (unsigned char *) image, WIDTH, HEIGHT, 0); 
+	for(int t=0; t<TIMESTEPS; t++){		
 
-	for(int i=0; i<TIMESTEPS; i++){		
 	  memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
 
   	planet_moveAll(planets,N);
 
 		//save picture of this TIMESTEP
-		sprintf(filename, "images/planets%03d.bmp", i+2);
+    for (int i=0; i<N; i++) {
+      dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
+    }
+	
+		sprintf(filename, "images/planets%03d.bmp", t+1);
 		saveBMP(filename, (unsigned char *) image, WIDTH, HEIGHT, 0); 		
 	}
 
