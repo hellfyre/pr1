@@ -37,7 +37,7 @@ int main() {
   const double G = -6.673e-11;
   planet *planets = malloc(sizeof(planet)*N);
   color *colors = malloc(sizeof(color)*N);
-  
+
   srand(time(NULL));
 
   // randomly generate N planets
@@ -97,24 +97,24 @@ int main() {
   }
 
   loops++;
-  
+
   int myRank, commSize;
   MPI_Init(&argc, &argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     MPI_Comm_size(MPI_COMM_WORLD, &commSize);
-  
+
     memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
     for (int i=0; i<N; i++) {
       dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
     }
-    
+
     char filename[1024];
-    saveBMP("images/planets000.bmp", (unsigned char *) image, WIDTH, HEIGHT, 0); 
+    saveBMP("images/planets000.bmp", (unsigned char *) image, WIDTH, HEIGHT, 0);
 
     //timesteps
     reset_time();
-    for(int t=0; t<TIMESTEPS; t++){		
+    for(int t=0; t<TIMESTEPS; t++) {
 
       memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
 
@@ -168,9 +168,9 @@ int main() {
       for (int i=0; i<N; i++) {
         //dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
       }
-    
+
       sprintf(filename, "images/planets%03d.bmp", t+1);
-      saveBMP(filename, (unsigned char *) image, WIDTH, HEIGHT, 0); 		
+      saveBMP(filename, (unsigned char *) image, WIDTH, HEIGHT, 0);
     }
     double time = get_time();
     printf("Serial: %f seconds\n", time);
