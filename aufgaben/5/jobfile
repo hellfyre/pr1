@@ -1,0 +1,8 @@
+#!/bin/sh
+#PBS -N pr1_s5
+#PBS -o serial.out
+#PBS -e serial.err
+#PBS -l nodes=4:ppn=8
+#PBS -l walltime=00:05:00
+
+mpiexec -np=1 ./program
