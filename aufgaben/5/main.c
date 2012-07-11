@@ -135,17 +135,3 @@ int main() {
 
   return 0;
 }
-
-    /*
-    printf("%d: r=%f x=%f y=%f m=%f vx=%f vy=%f rgb=%x%x%x\n",
-            i,
-            planets[i].r,
-            planets[i].x,
-            planets[i].y,
-            planets[i].m,
-            planets[i].vx,
-            planets[i].vy,
-            colors[i].red,
-            colors[i].green,
-            colors[i].blue);
-    */
