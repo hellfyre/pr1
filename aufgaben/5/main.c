@@ -124,7 +124,34 @@ int main() {
 
 	  memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
 
-  	planet_moveAll(planets,N);
+  	//planet_moveAll(planets,N);
+    double fx = 0, fy = 0;
+    for (int i=0; i<N; i++) {
+      for (int j=0; j<N; j++) {
+        if (i == j) continue;
+        double dist = sqrt( pow(planets[i].x - planets[j].x,2) + pow(planets[i].y - planets[j].y,2) );
+        double fmass = G * planets[i].m * planets[j].m / pow(dist,3);
+        fx += fmass * (planets[i].x - planets[j].x);
+        fy += fmass * (planets[i].y - planets[j].y);
+      }
+      printf("Planet[%d] forcex=%f forcey=%f\n", i, fx, fy);
+
+      // x_k = x_(k-1) + dt * v_(k-1)
+      planets[i].x += STEPSIZE * planets[i].vx;
+      planets[i].y += STEPSIZE * planets[i].vy;
+      if (planets[i].x < 0) planets[i].x += FIELD_MAX_X;
+      if (planets[i].y < 0) planets[i].y += FIELD_MAX_Y;
+      if (planets[i].x > FIELD_MAX_X) planets[i].x -= FIELD_MAX_X;
+      if (planets[i].y > FIELD_MAX_Y) planets[i].y -= FIELD_MAX_Y;
+
+      // v_k = v_(k-1) + dt * a_(k-1)
+      planets[i].vx += STEPSIZE * fx/planets[i].m;
+      planets[i].vy += STEPSIZE * fy/planets[i].m;
+      printf("Planets[%d] step %d x=%f y=%f vx=%f vy=%f\n", i, t, planets[i].x, planets[i].y, planets[i].vx, planets[i].vy);
+
+      dipDrawCircleFill(planets[i].x, planets[i].y, planets[i].r, *planets[i].c);
+
+    }
 
 		//save picture of this TIMESTEP
     for (int i=0; i<N; i++) {
