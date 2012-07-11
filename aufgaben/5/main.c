@@ -4,6 +4,7 @@
 
 #include <math.h>
 #include <time.h>
+#include <mpi.h>
 
 #include "drawcircle.h"
 #include "planets.h"
@@ -33,7 +34,7 @@ int random_in_range (unsigned int min, unsigned int max) {
 
 }
 
-int main() {
+int main(int argc, char *argv[]) {
   const double G = -6.673e-11;
   planet *planets = malloc(sizeof(planet)*N);
   color *colors = malloc(sizeof(color)*N);
@@ -112,7 +113,7 @@ int main() {
     saveBMP("images/planets000.bmp", (unsigned char *) image, WIDTH, HEIGHT, 0);
 
     //timesteps
-    reset_time();
+    resetTime();
     for(int t=0; t<TIMESTEPS; t++) {
 
       memset(image, 0, sizeof(color)*WIDTH*HEIGHT);
@@ -171,7 +172,7 @@ int main() {
       sprintf(filename, "images/planets%03d.bmp", t+1);
       saveBMP(filename, (unsigned char *) image, WIDTH, HEIGHT, 0);
     }
-    double time = get_time();
+    double time = getTime();
     printf("Serial: %f seconds\n", time);
 
   MPI_Finalize();

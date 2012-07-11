@@ -1,5 +1,5 @@
-CC = gcc
-CFLAGS = -O0 -Wall -std=gnu99 -ggdb
+CC = mpicc
+CFLAGS = -O3 -Wall -std=gnu99
 LDFLAGS = -lrt -lm
 
 all: cleanvideo program
@@ -7,7 +7,7 @@ all: cleanvideo program
 	/usr/bin/ffmpeg -b 1800 -r 3 -i images/planets%03d.bmp images/video.mp4
 	mplayer -fs images/video.mp4
 
-program: program.o planets.o drawcircle.o gettime.o
+program: program.o planets.o drawcircle.o
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 program.o: main.c
@@ -20,9 +20,6 @@ planets.o: planets.c
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 drawcircle.o: drawcircle.c
-	$(CC) $(CFLAGS) -o $@ -c $<
-
-gettime.o: gettime.c
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 video: images/*.bmp
