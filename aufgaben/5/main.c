@@ -11,7 +11,7 @@
 #include "bitmap.c"
 #include "gettime.c"
 
-#define N         50
+#define N         1000
 #define TIMESTEPS 100
 #define STEPSIZE  5
 
